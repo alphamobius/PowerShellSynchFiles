@@ -47,3 +47,4 @@ function syncDir {
 }
 
 syncDir
+echo yay!
