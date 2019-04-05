@@ -1,13 +1,33 @@
 $shareFolder = ""
 $localFolder = ""
 
-$shareFolderFiles = Get-ChildItem -Path $shareFolder
-$localFolderFiles = Get-ChildItem -Path $localFolder
-
-
 function syncDir {
+
+    param([string]$Folder1, [string]$Folder2)
+
+    $shareFolderFiles = Get-ChildItem -Path $Folder1 
+    $localFolderFiles = Get-ChildItem -Path $Folder2
+
+    #if one folder is empty and the other isn't... copy all over. 
+    if(($shareFolderFiles | Measure-Object).Count -eq 0){
+        if(($localFolderFiles | Measure-Object).Count -ne 0){
+            $localFolderFiles | Copy-Item -Destination $Folder1 -Recurse
+            return
+        }else{
+            #both are empty...
+            return
+        }
+    }
+    #folder1 is not empty
+    if(($localFolderFiles | Measure-Object).Count -eq 0){
+            $shareFolderFiles | Copy-Item -Destination $Folder2 -Recurse
+            return
+    }
+    #folder2 is also not empty, continue
+
+
     # This part of the script simply checks for file existence in both locations. Once I know each folder at least a version 
-    $fileDiffs = Compare-Object -ReferenceObject $shareFolderFiles -DifferenceObject $localFolderFiles -IncludeEqual
+    $fileDiffs = Compare-Object -ReferenceObject $shareFolderFiles -DifferenceObject $localFolderFiles -IncludeEqual 
     Foreach($fileComparison in $fileDiffs){
         #get -path 
         $copyParams = @{
@@ -21,6 +41,11 @@ function syncDir {
             $copyParams.Destination = $shareFolder
             Copy-Item @copyParams
             echo $fileComparison.InputObject.FullName copied to $ShareFolder
+        }
+        #if last copied item is a directory, recurse!
+        if((Get-Item $fileComparison.InputObject.FullName) -is [System.IO.DirectoryInfo]){
+            #syncdir the current subdirectory
+            syncDir (join-path $Folder1 $fileComparison.InputObject.Name) (join-path $Folder2 $fileComparison.InputObject.Name) 
         }
     }
 
@@ -46,5 +71,4 @@ function syncDir {
     }
 }
 
-syncDir
-echo yay!
+syncDir $shareFolder $localFolder
