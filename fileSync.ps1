@@ -58,8 +58,7 @@ function syncDir {
         #if(!(Test-Path -Path (join-path $localFolder $file.name))){    echo false    }  #test if exists in both another way, not used because it doesn't accurately get all files.
         #determine hash of both sides.  if same, skip regardless of last write time. If different, overwrite based on last write time. 
         if((Get-FileHash (join-path $localFolder $file)).Hash -eq (Get-FileHash (join-path $shareFolder $file)).Hash){
-            $file.name
-            echo same hash 
+            echo same-hash 
         }else{
             #hashes are different, select newest write time and copy that file both places. 
             if((join-path $shareFolder $file).LastWriteTime -gt (join-path $localFolder $file).LastWriteTime){
